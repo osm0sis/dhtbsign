@@ -246,7 +246,7 @@ int main(int argc, char **argv)
     if(sig_fn) {
         sig_data = load_file(sig_fn, 0);
         if (sig_data == 0) {
-            fprintf(stderr,"error: could not load signature '%s'\n", dt_fn);
+            fprintf(stderr,"error: could not load signature '%s'\n", sig_fn);
             return 1;
         }
     }
