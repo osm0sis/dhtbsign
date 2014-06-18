@@ -40,10 +40,10 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define QCDT_MAGIC     "QCDT"  /* Master DTB magic */
-#define QCDT_VERSION   1       /* QCDT version */
+#define PXADT_MAGIC     "PXA-DT"  /* Master DTB magic */
+#define PXADT_VERSION   1         /* PXADT version */
 
-#define QCDT_DT_TAG    "qcom,msm-id = <"
+#define PXADT_DT_TAG    "pxa,rev-id = <"
 
 #define PAGE_SIZE_DEF  2048
 #define PAGE_SIZE_MAX  (1024*1024)
@@ -58,7 +58,6 @@
 #define RC_ERROR       -1
 
 struct chipInfo_t {
-  uint32_t chipset;
   uint32_t platform;
   uint32_t revNum;
   uint32_t dtb_size;
@@ -147,7 +146,7 @@ int parse_commandline(int argc, char *const argv[])
     return RC_SUCCESS;
 }
 
-/* Unique entry sorted list add (by chipset->platform->rev) */
+/* Unique entry sorted list add (by platform->rev) */
 int chip_add(struct chipInfo_t *c)
 {
     struct chipInfo_t *x = chip_list;
@@ -160,11 +159,9 @@ int chip_add(struct chipInfo_t *c)
     }
 
     while (1) {
-        if ((c->chipset < x->chipset) ||
-            ((c->chipset == x->chipset) &&
-             ((c->platform < x->platform) ||
+        if ((c->platform < x->platform) ||
               ((c->platform == x->platform) &&
-               (c->revNum < x->revNum))))) {
+               (c->revNum < x->revNum))) {
             if (!x->prev) {
                 c->next = x;
                 c->prev = NULL;
@@ -179,8 +176,7 @@ int chip_add(struct chipInfo_t *c)
                 break;
             }
         }
-        if ((c->chipset == x->chipset) &&
-            (c->platform == x->platform) &&
+        if ((c->platform == x->platform) &&
             (c->revNum == x->revNum)) {
             return RC_ERROR;  /* duplicate */
         }
@@ -208,8 +204,8 @@ void chip_deleteall()
     }
 }
 
-/* Extract 'qcom,msm-id' parameter triplet from DTB
-      qcom,msm-id = <x y z>;
+/* Extract 'pxa,rev-id' parameter duplet from DTB
+      pxa,rev-id = <x y>;
  */
 struct chipInfo_t *getChipInfo(const char *filename, int *num)
 {
@@ -254,15 +250,15 @@ struct chipInfo_t *getChipInfo(const char *filename, int *num)
     if (pfile == NULL) {
         log_err("... skip, fail to decompile dtb\n");
     } else {
-        /* Find "qcom,msm-id" */
+        /* Find "pxa,rev-id" */
         while ((llen = getline(&line, &line_size, pfile)) != -1) {
-            if ((pos = strstr(line, QCDT_DT_TAG)) != NULL) {
-                pos += strlen(QCDT_DT_TAG);
+            if ((pos = strstr(line, PXADT_DT_TAG)) != NULL) {
+                pos += strlen(PXADT_DT_TAG);
 
                 entryEnded = 0;
                 while (1) {
                     entryValid = 1;
-                    for (i = 0; i < 3; i++) {
+                    for (i = 0; i < 2; i++) {
                         tok = strtok_r(pos, " \t", &sptr);
                         pos = NULL;
                         if (tok != NULL) {
@@ -298,9 +294,8 @@ struct chipInfo_t *getChipInfo(const char *filename, int *num)
                             tmp->t_next = chip->t_next;
                             chip->t_next = tmp;
                         }
-                        tmp->chipset  = data[0];
-                        tmp->platform = data[1];
-                        tmp->revNum   = data[2];
+                        tmp->platform = data[0];
+                        tmp->revNum   = data[1];
                         tmp->dtb_size = 0;
                         tmp->dtb_file = NULL;
                         tmp->master   = chip;
@@ -310,7 +305,7 @@ struct chipInfo_t *getChipInfo(const char *filename, int *num)
                     }
                 }
 
-                log_err("... skip, incorrect '%s' format\n", QCDT_DT_TAG);
+                log_err("... skip, incorrect '%s' format\n", PXADT_DT_TAG);
                 break;
             }
         }
@@ -339,7 +334,7 @@ int main(int argc, char **argv)
     int dtb_count = 0, dtb_offset = 0;
     size_t wrote = 0, expected = 0;
     struct stat st;
-    uint32_t version = QCDT_VERSION;
+    uint32_t version = PXADT_VERSION;
     int num;
     uint32_t dtb_size;
 
@@ -368,7 +363,7 @@ int main(int argc, char **argv)
     memset(filler, 0, page_size);
 
     /* Open the .dtb files in the specified path, decompile and
-       extract "qcom,msm-id" parameter
+       extract "pxa,rev-id" parameter
      */
     while ((dp = readdir(dir)) != NULL) {
         if ((dp->d_type == DT_REG)) {
@@ -391,7 +386,7 @@ int main(int argc, char **argv)
                 chip = getChipInfo(filename, &num);
                 if (!chip) {
                     log_err("skip, failed to scan for '%s' tag\n",
-                            QCDT_DT_TAG);
+                            PXADT_DT_TAG);
                     free(filename);
                     continue;
                 }
@@ -403,12 +398,12 @@ int main(int argc, char **argv)
                     continue;
                 }
 
-                log_info("chipset: %u, platform: %u, rev: %u\n",
-                         chip->chipset, chip->platform, chip->revNum);
+                log_info("platform: %u, rev: %u\n",
+                         chip->platform, chip->revNum);
 
                 for (t_chip = chip->t_next; t_chip; t_chip = t_chip->t_next) {
-                    log_info("   additional chipset: %u, platform: %u, rev: %u\n",
-                             t_chip->chipset, t_chip->platform, t_chip->revNum);
+                    log_info("   additional platform: %u, rev: %u\n",
+                             t_chip->platform, t_chip->revNum);
                 }
 
                 rc = chip_add(chip);
@@ -427,8 +422,8 @@ int main(int argc, char **argv)
                 for (t_chip = chip->t_next; t_chip; t_chip = t_chip->t_next) {
                     rc = chip_add(t_chip);
                     if (rc != RC_SUCCESS) {
-                        log_err("... duplicate info, skipped (chipset %u, platform: %u, rev: %u\n",
-                             t_chip->chipset, t_chip->platform, t_chip->revNum);
+                        log_err("... duplicate info, skipped (platform: %u, rev: %u\n",
+                             t_chip->platform, t_chip->revNum);
                         continue;
                     }
                     dtb_count++;
@@ -459,14 +454,14 @@ int main(int argc, char **argv)
     }
 
     /* Write header info */
-    wrote += write(out_fd, QCDT_MAGIC, sizeof(uint8_t) * 4); /* magic */
+    wrote += write(out_fd, PXADT_MAGIC, sizeof(uint8_t) * 6); /* magic */
     wrote += write(out_fd, &version, sizeof(uint32_t));      /* version */
     wrote += write(out_fd, (uint32_t *)&dtb_count, sizeof(uint32_t));
                                                              /* #DTB */
 
     /* Calculate offset of first DTB block */
-    dtb_offset = 12               + /* header */
-                 (20 * dtb_count) + /* DTB table entries */
+    dtb_offset = 14               + /* header */
+                 (16 * dtb_count) + /* DTB table entries */
                  4;                 /* end of table indicator */
     /* Round up to page size */
     padding = page_size - (dtb_offset % page_size);
@@ -474,14 +469,12 @@ int main(int argc, char **argv)
     expected = dtb_offset;
 
     /* Write index table:
-         chipset
          platform
          soc rev
          dtb offset
          dtb size
      */
     for (chip = chip_list; chip; chip = chip->next) {
-        wrote += write(out_fd, &chip->chipset, sizeof(uint32_t));
         wrote += write(out_fd, &chip->platform, sizeof(uint32_t));
         wrote += write(out_fd, &chip->revNum, sizeof(uint32_t));
         if (chip->master->master_offset != 0) {

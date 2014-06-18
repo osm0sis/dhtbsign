@@ -27,6 +27,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS DOCUMENTATION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
+June 2014, Ketut P. Kumajaya
+Samsung Galaxy Tab 4 7.0 PXA1088 boot image and device tree
+documentation.
+
 
 Android - Table of Device Tree
 ==============================
@@ -52,35 +56,49 @@ Android - Table of Device Tree
   13) kernel cmdline (512B)
   14) id (8B)
 
-1.2) Layout:
+1.2) Samsung Galaxy Tab 4 7.0 PXA1088 Header:
+   1) Magic (8B)
+   2) kernel size (4B)
+   3) kernel addr (4B)
+   4) ramdisk size (4B)
+   5) ramdisk addr (4B)
+   6) 2ndary size (4B)
+   7) 2ndary addr (4B)
+   8) device tree size (4B)
+   9) unknown (4B) (0x02000000)
+   8) tags addr (4B)
+   9) page size (4B)
+  12) product name (24B)
+  13) kernel cmdline (512B)
+  14) id (8B)
+
+1.3) Layout:
    A) header (as above - 1 page)
    B) kernel (n pages)
    C) ramdisk (m pages)
    D) second stage (o pages)
 
-2) QC table of device tree
+2) PXA table of device tree
 --------------------------
 2.1) Changes:
    i) use "unused #1, #2" members in existing boot image
-      header to point to new table of device tree
-      (#1 - size of QC table of DT)
+      as tags address and page size and use previous tags address as
+      device tree size
   ii) append table of device tree (described later)
       after "D) second stage"
 
 2.2) Format:
                                  size
    x      +------------------+
-   |      | MAGIC ("QCDT")   |   4B
+   |      | MAGIC ("PXA-DT") |   6B
    |      +------------------+
  header   | VERSION          |   uint32 (initial version 1)
    |      +------------------+
    |      | num of DTBs      |   uint32 (number of DTB entries)
    x      +------------------+
-   |      | platform id #1   |   uint32 (e.g. ID for MSM8974)
-   |      +------------------+
-   |      | variant id #1    |   uint32 (e.g. ID for CDP, MTP)
+   |      | platform id #1   |   uint32 (e.g. 3909 for Degas3g)
  device   +------------------+
-  #1      | soc rev #1       |   uint32 (e.g. MSM8974 v2)
+  #1      | soc rev #1       |   uint32 (e.g. 3 for Degas3g v3)
  entry    +------------------+
    |      | offset #1        |   uint32 (byte offset from start/before MAGIC
    |      +------------------+           to DTB entry)
@@ -91,16 +109,14 @@ Android - Table of Device Tree
    .              .
 
    x      +------------------+
-   |      | platform id #Z   |   uint32 (e.g. ID for MSM8974)
+   |      | platform id #Z   |   uint32 (e.g. 3911 for Degaswifi)
    |      +------------------+
-  device  | variant id #Z    |   uint32 (e.g. ID for CDP, MTP)
+  device  | soc rev #Z       |   uint32 (e.g. 3 for Degaswifi v3)
   #Z      +------------------+
-  entry   | soc rev #Z       |   uint32 (e.g. MSM8974 v2)
-  (last)  +------------------+
-   |      | offset #Z        |   uint32 (byte offset from start/before MAGIC
+  entry   | offset #Z        |   uint32 (byte offset from start/before MAGIC
+  (last)  +------------------+           to DTB entry)
+   |      | 0 ("zero")       |   uint32 (end of list delimiter)
    x      +------------------+           to DTB entry)
-          | 0 ("zero")       |   uint32 (end of list delimiter)
-          +------------------+           to DTB entry)
           | padding          |   variable length for next DTB to start on
           +------------------+           page boundary
           | DTB #1           |   variable (start is page aligned)
@@ -122,37 +138,33 @@ Android - Table of Device Tree
 3) Operations
 -------------
 3.1) Build-time:
-  1) Each DTS per device will add a "qcom,msm-id" triplet
-     e.g. for msm8974-sim.dts, add
-          qcom,msm-id = <x y z>;
-     x = ID for msm8974
-     y = ID for CDP, MTP, etc.
-     z = ID for soc revision
-     The triplet can optionally be an array of triplets:
-         qcom,msm-id = <x1, y1, z1>, <x2, y2, z2>, ...;
+  1) Each DTS per device will add a "pxa,rev-id" duplet
+     e.g. pxa1088-degas3g-r03.dts, add
+          pxa,rev-id = <x y>;
+     x = ID for Degas3g, Degaswifi, etc.
+     y = ID for soc revision
   2) Kernel compile will generate the DTB
   3) Android build will run a new tool (dtbTool)
      a) scan the DTB output directory for all compiled DTB
-     b) decompile the DTB for "qcom,msm-id"
-     c) generate the QC table of device tree in sorted
+     b) decompile the DTB for "pxa,rev-id"
+     c) generate the PXA table of device tree in sorted
         order (platform, variant, soc rev)
      d) modified mkbootimg will merge new table of DT
 
 3.2) Run-time:
-  1) LK bootloader will obtain MSM id/variant/soc rev info
+  1) Bootloader will obtain PXA id/soc rev info
      either from early bootloaders or via other means
-  2) LK bootloader will check entries #10 for non-zero
+  2) Bootloader will check entries #10 for non-zero
      value (set to zero for standard boot.img).  If the
      value is non-zero, refer to page section after
      the "second stage" in the boot.img layout
-  3) Check QCDT magic
-  4) Check QCDT version (optional LK to handle multiple
-     QCDT version)
-  5) LK scans through the QCDT table to look for matching
+  3) Check PXA-DT magic
+  4) Check PXA-DT version (optional to handle multiple
+     PXA-DT version)
+  5) Bootloader scans through the PXA-DT table to look for matching
      entry.  Search order is:
      1) platform ID exact match
-     2) variant ID exact match
-     3) select the highest soc rev in QCDT that is
+     2) select the highest soc rev in PXA-DT that is
         equal to or lower than the runtime detected soc rev
   6) Load the matching DTB blob to the tags addr
-  7) LK pass the correct DTB to the kernel
+  7) Bootloader pass the correct DTB to the kernel
