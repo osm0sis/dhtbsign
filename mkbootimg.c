@@ -120,8 +120,8 @@ int main(int argc, char **argv)
     unsigned kernel_offset  = 0x00008000;
     unsigned ramdisk_offset = 0x01000000;
     unsigned second_offset  = 0x00f00000;
-    unsigned tags_offset    = 0x00000100;
-    unsigned unused         = 0x02000000;
+    unsigned tags_offset    = 0x00000000;
+    unsigned unused         = 0x00000000;
 
     argc--;
     argv++;
@@ -178,6 +178,7 @@ int main(int argc, char **argv)
     hdr.ramdisk_addr = base + ramdisk_offset;
     hdr.second_addr =  base + second_offset;
     hdr.tags_addr =    base + tags_offset;
+    hdr.signature_size = 256;
     hdr.unused =       unused;
 
     if(bootimg == 0) {
@@ -242,9 +243,9 @@ int main(int argc, char **argv)
             return 1;
         }
     }
-
+    unsigned sig_size;
     if(sig_fn) {
-        sig_data = load_file(sig_fn, 0);
+        sig_data = load_file(sig_fn, &sig_size);
         if (sig_data == 0) {
             fprintf(stderr,"error: could not load signature '%s'\n", sig_fn);
             return 1;
@@ -295,7 +296,7 @@ int main(int argc, char **argv)
     }
 
     if(sig_data) {
-        if(write(fd, sig_data, 256) != 256) goto fail;
+        write(fd, sig_data, sig_size);
     }
 
     return 0;
