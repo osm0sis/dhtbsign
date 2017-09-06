@@ -32,6 +32,6 @@ dhtbsign.o:dhtbsign.c
 	$(CROSS_COMPILE)$(CC) -o $@ $(CFLAGS) -c $< -I. -Werror
 
 clean:
-	$(RM) dhtbsign libmincrypt.a
+	$(RM) dhtbsign dhtbsign.o libmincrypt.a
 	make -C libmincrypt clean
 
