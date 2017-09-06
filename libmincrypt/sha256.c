@@ -27,7 +27,7 @@
 
 // Optimized for minimal code size.
 
-#include "../mincrypt/sha256.h"
+#include "mincrypt/sha256.h"
 
 #include <stdio.h>
 #include <string.h>
