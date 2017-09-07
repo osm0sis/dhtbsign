@@ -1,11 +1,11 @@
-Samsung Tab A 7 DHTB header - reversed engineered (thanks @jedld)
+Samsung Tab A 7 DHTB header - reverse engineered (thanks @jedld)
 SM-T280 (gtexswifi)
 
 Original information on the DHTB header/signing here:
 https://forum.xda-developers.com/galaxy-tab-a/help/resources-samsung-galaxy-tab-7-0-2016-t3431022/post72734231#post72734231
 
-Also thanks to @ashyx for research/testing, and many thanks to @chiefwigms for the original mkT280bootimg utility
-(https://github.com/chiefwigms/degas-mkbootimg/tree/galaxy_tab_a_smt285)
+Also thanks to @ashyx for research/testing, and many thanks to @chiefwigms for the original mkT280bootimg utility:
+https://github.com/chiefwigms/degas-mkbootimg/tree/galaxy_tab_a_smt285
 
 
 DHTB magic: 0x44485442 0x01000000

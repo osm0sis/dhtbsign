@@ -1,3 +1,8 @@
+/*
+ * dhtbsign.c - Based on mkT280bootimg by chiefwigms @ xda-developers
+ * https://github.com/chiefwigms/degas-mkbootimg/blob/galaxy_tab_a_smt285/mkT280bootimg.c
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +27,7 @@ int usage()
 {
     printf("usage: dhtbsign\n");
     printf("\t-i|--input boot.img\n");
-    printf("\t-o|--output boot_t280.img\n");
+    printf("\t-o|--output boot_dhtb.img\n");
     return 0;
 }
 
@@ -31,6 +36,7 @@ int main (int argc, char** argv)
     char* iname = NULL;
     char* oname = NULL;
     char tmp[4096];
+    int i;
 
     argc--;
     argv++;
@@ -90,7 +96,7 @@ int main (int argc, char** argv)
     int seeklimit = 65536;
     int need_seandroid = 1;
     int need_plpadding = 1;
-    for (int i = isize - seeklimit; i <= isize; i++) {
+    for (i = isize - seeklimit; i <= isize; i++) {
         fseek(ifile, i, SEEK_SET);
         if(fread(tmp, SEANDROID_MAGIC_SZ, 1, ifile)){};
         if (memcmp(tmp, SEANDROID_MAGIC, SEANDROID_MAGIC_SZ) == 0) {
@@ -110,10 +116,10 @@ int main (int argc, char** argv)
     }
     printf("Input read size: %d\n", isize);
 
-    //Allocate header + boot.img size + trailing padding
+    //Allocate header + boot.img size
     unsigned char *bootimg = malloc(DHTB_HEADER_SZ + isize);
     if (bootimg == NULL)
-        printf("Error allocating %ld bytes for output file!", (DHTB_HEADER_SZ + isize + 12));
+        printf("Error allocating %ld bytes for output file!", (DHTB_HEADER_SZ + isize));
     fseek(ifile, 0, SEEK_SET);
     if(fread((DHTB_HEADER_SZ + bootimg), isize, 1, ifile)){};
     fclose(ifile);
@@ -147,7 +153,7 @@ int main (int argc, char** argv)
     memcpy(bootimg, DHTB_MAGIC, sizeof(DHTB_MAGIC));
 
     //Copy SHA256
-    for (int i = 0; i < SHA256_DIGEST_SIZE; i++)
+    for (i = 0; i < SHA256_DIGEST_SIZE; i++)
         bootimg[SHA256_OFFSET+i] = sha256[i];
 
     //Copy payload size as LE
