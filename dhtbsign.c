@@ -92,7 +92,7 @@ int main (int argc, char** argv)
     }
 
     //Check if SEANDROIDENFORCE footer and/or 0xFFFFFFFF padding are needed
-    printf("Input filesize: %d\n", isize);
+    printf("Input filesize: %ld\n", isize);
     int seeklimit = 65536;
     int need_seandroid = 1;
     int need_plpadding = 1;
@@ -114,7 +114,7 @@ int main (int argc, char** argv)
             break;
         }
     }
-    printf("Input read size: %d\n", isize);
+    printf("Input read size: %ld\n", isize);
 
     //Allocate header + boot.img size
     unsigned char *bootimg = malloc(DHTB_HEADER_SZ + isize);
@@ -140,7 +140,7 @@ int main (int argc, char** argv)
     memset(bootimg, 0, DHTB_HEADER_SZ);
 
     //Calculate payload size
-    printf("Payload size: %d\n", isize);
+    printf("Payload size: %ld\n", isize);
     uint32_t psize = isize;
 
     //Compute SHA256 of payload
