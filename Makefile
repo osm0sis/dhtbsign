@@ -26,7 +26,7 @@ endif
 all:libmincrypt.a dhtbsign$(EXE)
 
 static:
-	make LDFLAGS="$(LDGLAGS) -static"
+	make LDFLAGS="$(LDFLAGS) -static"
 
 libmincrypt.a:
 	make -C libmincrypt
