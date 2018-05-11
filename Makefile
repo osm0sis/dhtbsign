@@ -23,15 +23,15 @@ else
     LDFLAGS += -Wl,--gc-sections -s
 endif
 
-all:libmincrypt.a dhtbsign$(EXE)
+all:dhtbsign$(EXE)
 
 static:
-	make LDFLAGS="$(LDFLAGS) -static"
+	$(MAKE) LDFLAGS="$(LDFLAGS) -static"
 
 libmincrypt.a:
-	make -C libmincrypt
+	$(MAKE) -C libmincrypt
 
-dhtbsign$(EXE):dhtbsign.o
+dhtbsign$(EXE):dhtbsign.o libmincrypt.a
 	$(CROSS_COMPILE)$(CC) -o $@ $^ -L. -lmincrypt $(LDFLAGS)
 
 dhtbsign.o:dhtbsign.c
@@ -40,5 +40,5 @@ dhtbsign.o:dhtbsign.c
 clean:
 	$(RM) dhtbsign
 	$(RM) *.a *.~ *.exe *.o
-	make -C libmincrypt clean
+	$(MAKE) -C libmincrypt clean
 

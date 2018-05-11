@@ -8,7 +8,7 @@ Also thanks to @ashyx for research/testing, and many thanks to @chiefwigms for t
 https://github.com/chiefwigms/degas-mkbootimg/tree/galaxy_tab_a_smt285
 
 
-DHTB magic: 0x44485442 0x01000000
+DHTB magic: \x44\x48\x54\x42\x01\x00\x00\x00
 
 payload sha256sum: ANDROID! to SEANDROIDENFORCE + 0xFFFFFFFF
 
